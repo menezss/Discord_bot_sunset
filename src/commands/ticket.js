@@ -1,27 +1,27 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { isSupport } = require('../systems/permissions');
-const { sendTicketPanel } = require('../systems/tickets');
+const { isSupporte } = require('../systems/permissoes');
+const { enviarPainelTicket } = require('../systems/tickets');
 const embed = require('../utils/embed');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('ticket')
-    .setDescription('Ticket system commands.')
+    .setDescription('Comandos do sistema de tickets.')
     .addSubcommand(sub =>
-      sub.setName('panel').setDescription('Send the ticket panel to this channel.')
+      sub.setName('painel').setDescription('Envia o painel de tickets neste canal.')
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
-    if (!isSupport(interaction.user.id)) {
-      return interaction.reply({ embeds: [embed.error('No Permission', 'You do not have permission to use this command.')], ephemeral: true });
+    if (!isSupporte(interaction.user.id)) {
+      return interaction.reply({ embeds: [embed.erro('Sem Permissão', 'Você não tem permissão para usar este comando.')], ephemeral: true });
     }
 
     const sub = interaction.options.getSubcommand();
 
-    if (sub === 'panel') {
-      await sendTicketPanel(interaction.channel);
-      await interaction.reply({ embeds: [embed.success('Panel Sent', 'The ticket panel has been sent.')], ephemeral: true });
+    if (sub === 'painel') {
+      await enviarPainelTicket(interaction.channel);
+      await interaction.reply({ embeds: [embed.sucesso('Painel Enviado', 'O painel de tickets foi enviado com sucesso.')], ephemeral: true });
     }
   },
 };

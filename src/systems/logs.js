@@ -1,39 +1,37 @@
-const { AuditLogEvent } = require('discord.js');
-const { logGeneral } = require('../utils/logger');
-const config = require('../../config');
+const { logGeral } = require('../utils/logger');
 
-async function logMemberJoin(client, member) {
-  await logGeneral(client, '📥 Member Joined', `**${member.user.tag}** joined the server.`, [
-    { name: 'User ID', value: member.user.id, inline: true },
-    { name: 'Account Created', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
+async function logEntradaMembro(client, member) {
+  await logGeral(client, '📥 Membro Entrou', `**${member.user.tag}** entrou no servidor.`, [
+    { name: 'ID do Usuário', value: member.user.id, inline: true },
+    { name: 'Conta Criada', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
   ]);
 }
 
-async function logMemberLeave(client, member) {
-  await logGeneral(client, '📤 Member Left', `**${member.user.tag}** left the server.`, [
-    { name: 'User ID', value: member.user.id, inline: true },
+async function logSaidaMembro(client, member) {
+  await logGeral(client, '📤 Membro Saiu', `**${member.user.tag}** saiu do servidor.`, [
+    { name: 'ID do Usuário', value: member.user.id, inline: true },
   ]);
 }
 
-async function logMessageDelete(client, message) {
+async function logMensagemDeletada(client, message) {
   if (message.author?.bot) return;
   if (!message.content) return;
 
-  await logGeneral(client, '🗑️ Message Deleted', `A message was deleted in <#${message.channel.id}>.`, [
-    { name: 'Author', value: `${message.author?.tag || 'Unknown'} (${message.author?.id || 'Unknown'})`, inline: true },
-    { name: 'Content', value: message.content.slice(0, 1000) || '*No content*', inline: false },
+  await logGeral(client, '🗑️ Mensagem Deletada', `Uma mensagem foi deletada em <#${message.channel.id}>.`, [
+    { name: 'Autor', value: `${message.author?.tag || 'Desconhecido'} (${message.author?.id || 'Desconhecido'})`, inline: true },
+    { name: 'Conteúdo', value: message.content.slice(0, 1000) || '*Sem conteúdo*', inline: false },
   ]);
 }
 
-async function logMessageEdit(client, oldMessage, newMessage) {
-  if (newMessage.author?.bot) return;
-  if (oldMessage.content === newMessage.content) return;
+async function logMensagemEditada(client, antigaMensagem, novaMensagem) {
+  if (novaMensagem.author?.bot) return;
+  if (antigaMensagem.content === novaMensagem.content) return;
 
-  await logGeneral(client, '✏️ Message Edited', `A message was edited in <#${newMessage.channel.id}>.`, [
-    { name: 'Author', value: `${newMessage.author?.tag} (${newMessage.author?.id})`, inline: true },
-    { name: 'Before', value: oldMessage.content?.slice(0, 500) || '*No content*', inline: false },
-    { name: 'After', value: newMessage.content?.slice(0, 500) || '*No content*', inline: false },
+  await logGeral(client, '✏️ Mensagem Editada', `Uma mensagem foi editada em <#${novaMensagem.channel.id}>.`, [
+    { name: 'Autor', value: `${novaMensagem.author?.tag} (${novaMensagem.author?.id})`, inline: true },
+    { name: 'Antes', value: antigaMensagem.content?.slice(0, 500) || '*Sem conteúdo*', inline: false },
+    { name: 'Depois', value: novaMensagem.content?.slice(0, 500) || '*Sem conteúdo*', inline: false },
   ]);
 }
 
-module.exports = { logMemberJoin, logMemberLeave, logMessageDelete, logMessageEdit };
+module.exports = { logEntradaMembro, logSaidaMembro, logMensagemDeletada, logMensagemEditada };

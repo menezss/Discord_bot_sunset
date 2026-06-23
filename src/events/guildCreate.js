@@ -5,20 +5,20 @@ const { buildEmbed } = require('../utils/logger');
 module.exports = {
   name: Events.GuildCreate,
   async execute(guild) {
-    console.log(`[Bot] Joined new guild: ${guild.name} (${guild.id}) — Members: ${guild.memberCount}`);
+    console.log(`[Bot] Entrou em um novo servidor: ${guild.name} (${guild.id}) — Membros: ${guild.memberCount}`);
 
     if (config.logs.channelId) {
       try {
-        const channel = await guild.client.channels.fetch(config.logs.channelId);
-        if (channel?.isTextBased()) {
-          await channel.send({
+        const canal = await guild.client.channels.fetch(config.logs.channelId);
+        if (canal?.isTextBased()) {
+          await canal.send({
             embeds: [buildEmbed(
-              '🌐 Joined a New Server',
-              `The bot has joined **${guild.name}**.`,
+              '🌐 Entrou em um Novo Servidor',
+              `O bot entrou em **${guild.name}**.`,
               config.embeds.successColor,
               [
-                { name: 'Guild ID', value: guild.id, inline: true },
-                { name: 'Members', value: String(guild.memberCount), inline: true },
+                { name: 'ID do Servidor', value: guild.id, inline: true },
+                { name: 'Membros', value: String(guild.memberCount), inline: true },
               ]
             )],
           });

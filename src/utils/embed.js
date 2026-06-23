@@ -1,40 +1,42 @@
 const { EmbedBuilder } = require('discord.js');
 const config = require('../../config');
 
-function base(color) {
-  const embed = new EmbedBuilder()
-    .setColor(color || config.embeds.color)
+function base(cor) {
+  const e = new EmbedBuilder()
+    .setColor(cor || config.embeds.color)
     .setTimestamp();
 
   if (config.embeds.footer?.text) {
-    embed.setFooter({
+    e.setFooter({
       text: config.embeds.footer.text,
       iconURL: config.embeds.footer.iconURL || undefined,
     });
   }
 
-  return embed;
-}
-
-function success(title, description) {
-  return base(config.embeds.successColor).setTitle(`✅ ${title}`).setDescription(description);
-}
-
-function error(title, description) {
-  return base(config.embeds.errorColor).setTitle(`❌ ${title}`).setDescription(description);
-}
-
-function warning(title, description, fields = []) {
-  const e = base(config.embeds.warningColor).setTitle(`⚠️ ${title}`).setDescription(description);
-  if (fields.length > 0) e.addFields(fields);
   return e;
 }
 
-function info(title, description, fields = []) {
-  const e = base(config.embeds.color).setTitle(title).setDescription(description);
-  if (fields.length > 0) e.addFields(fields);
+function sucesso(titulo, descricao, campos = []) {
+  const e = base(config.embeds.successColor).setTitle(`✅ ${titulo}`).setDescription(descricao);
+  if (campos.length > 0) e.addFields(campos);
+  return e;
+}
+
+function erro(titulo, descricao) {
+  return base(config.embeds.errorColor).setTitle(`❌ ${titulo}`).setDescription(descricao);
+}
+
+function aviso(titulo, descricao, campos = []) {
+  const e = base(config.embeds.warningColor).setTitle(`⚠️ ${titulo}`).setDescription(descricao);
+  if (campos.length > 0) e.addFields(campos);
+  return e;
+}
+
+function info(titulo, descricao, campos = []) {
+  const e = base(config.embeds.color).setTitle(titulo).setDescription(descricao);
+  if (campos.length > 0) e.addFields(campos);
   if (config.embeds.banner) e.setImage(config.embeds.banner);
   return e;
 }
 
-module.exports = { success, error, warning, info, base };
+module.exports = { sucesso, erro, aviso, info, base };

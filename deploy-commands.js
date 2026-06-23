@@ -8,19 +8,19 @@ const clientId = process.env.CLIENT_ID;
 const guildId = process.env.GUILD_ID;
 
 if (!token || !clientId) {
-  console.error('[Deploy] ERROR: DISCORD_TOKEN and CLIENT_ID must be set in .env');
+  console.error('[Deploy] ERRO: DISCORD_TOKEN e CLIENT_ID devem estar definidos nas variáveis de ambiente.');
   process.exit(1);
 }
 
-const commands = [];
-const commandsPath = path.join(__dirname, 'src', 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
+const comandos = [];
+const pastaComandos = path.join(__dirname, 'src', 'commands');
+const arquivosComandos = fs.readdirSync(pastaComandos).filter(f => f.endsWith('.js'));
 
-for (const file of commandFiles) {
-  const command = require(path.join(commandsPath, file));
-  if (command.data) {
-    commands.push(command.data.toJSON());
-    console.log(`[Deploy] Queued: /${command.data.name}`);
+for (const arquivo of arquivosComandos) {
+  const comando = require(path.join(pastaComandos, arquivo));
+  if (comando.data) {
+    comandos.push(comando.data.toJSON());
+    console.log(`[Deploy] Enfileirado: /${comando.data.name}`);
   }
 }
 
@@ -28,18 +28,18 @@ const rest = new REST({ version: '10' }).setToken(token);
 
 (async () => {
   try {
-    console.log(`[Deploy] Registering ${commands.length} slash command(s)...`);
+    console.log(`[Deploy] Registrando ${comandos.length} comando(s)...`);
 
-    let data;
+    let dados;
     if (guildId) {
-      data = await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-      console.log(`[Deploy] Registered ${data.length} command(s) to guild ${guildId} (instant)`);
+      dados = await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: comandos });
+      console.log(`[Deploy] ${dados.length} comando(s) registrado(s) no servidor ${guildId} (instantâneo)`);
     } else {
-      data = await rest.put(Routes.applicationCommands(clientId), { body: commands });
-      console.log(`[Deploy] Registered ${data.length} command(s) globally (may take up to 1 hour)`);
+      dados = await rest.put(Routes.applicationCommands(clientId), { body: comandos });
+      console.log(`[Deploy] ${dados.length} comando(s) registrado(s) globalmente (pode levar até 1 hora)`);
     }
   } catch (err) {
-    console.error('[Deploy] Failed:', err);
+    console.error('[Deploy] Falha:', err);
     process.exit(1);
   }
 })();

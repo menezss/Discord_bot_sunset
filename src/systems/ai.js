@@ -10,43 +10,43 @@ function getClient() {
   return client;
 }
 
-const conversationHistory = new Map();
+const historicoConversas = new Map();
 
-async function askAI(ticketChannelId, userMessage, username) {
+async function perguntarIA(ticketChannelId, mensagemUsuario, nomeUsuario) {
   const openai = getClient();
-  if (!openai) throw new Error('OpenAI API key not configured.');
+  if (!openai) throw new Error('Chave da API OpenAI não configurada.');
 
-  if (!conversationHistory.has(ticketChannelId)) {
-    conversationHistory.set(ticketChannelId, [
+  if (!historicoConversas.has(ticketChannelId)) {
+    historicoConversas.set(ticketChannelId, [
       { role: 'system', content: config.ai.systemPrompt },
     ]);
   }
 
-  const history = conversationHistory.get(ticketChannelId);
-  history.push({ role: 'user', content: `${username}: ${userMessage}` });
+  const historico = historicoConversas.get(ticketChannelId);
+  historico.push({ role: 'user', content: `${nomeUsuario}: ${mensagemUsuario}` });
 
-  if (history.length > 20) {
-    const systemMsg = history[0];
-    history.splice(1, history.length - 19);
-    history[0] = systemMsg;
+  if (historico.length > 20) {
+    const msgSistema = historico[0];
+    historico.splice(1, historico.length - 19);
+    historico[0] = msgSistema;
   }
 
-  const response = await openai.chat.completions.create({
+  const resposta = await openai.chat.completions.create({
     model: config.ai.model,
-    messages: history,
+    messages: historico,
     max_tokens: config.ai.maxTokens,
   });
 
-  const reply = response.choices[0]?.message?.content?.trim();
+  const reply = resposta.choices[0]?.message?.content?.trim();
   if (reply) {
-    history.push({ role: 'assistant', content: reply });
+    historico.push({ role: 'assistant', content: reply });
   }
 
-  return reply || 'I was unable to generate a response. Please wait for a staff member.';
+  return reply || 'Não foi possível gerar uma resposta. Aguarde um membro da equipe.';
 }
 
-function clearHistory(ticketChannelId) {
-  conversationHistory.delete(ticketChannelId);
+function limparHistorico(ticketChannelId) {
+  historicoConversas.delete(ticketChannelId);
 }
 
-module.exports = { askAI, clearHistory };
+module.exports = { perguntarIA, limparHistorico, clearHistory: limparHistorico };

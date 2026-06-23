@@ -1,10 +1,10 @@
 const { Events } = require('discord.js');
 const {
-  createTicket,
-  closeTicket,
-  confirmCloseTicket,
-  saveTranscriptNow,
-  toggleAI,
+  criarTicket,
+  fecharTicket,
+  confirmarFecharTicket,
+  salvarTranscritoAgora,
+  alternarIA,
 } = require('../systems/tickets');
 const embed = require('../utils/embed');
 
@@ -12,19 +12,19 @@ module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
     if (interaction.isChatInputCommand()) {
-      const command = interaction.client.commands.get(interaction.commandName);
-      if (!command) {
-        return interaction.reply({ embeds: [embed.error('Unknown Command', 'This command does not exist.')], ephemeral: true });
+      const comando = interaction.client.commands.get(interaction.commandName);
+      if (!comando) {
+        return interaction.reply({ embeds: [embed.erro('Comando Desconhecido', 'Este comando não existe.')], ephemeral: true });
       }
       try {
-        await command.execute(interaction);
+        await comando.execute(interaction);
       } catch (err) {
-        console.error(`[Commands] Error executing /${interaction.commandName}:`, err);
-        const errMsg = { embeds: [embed.error('Error', 'An error occurred while running this command.')], ephemeral: true };
+        console.error(`[Comandos] Erro ao executar /${interaction.commandName}:`, err);
+        const msgErro = { embeds: [embed.erro('Erro', 'Ocorreu um erro ao executar este comando.')], ephemeral: true };
         if (interaction.replied || interaction.deferred) {
-          await interaction.followUp(errMsg).catch(() => {});
+          await interaction.followUp(msgErro).catch(() => {});
         } else {
-          await interaction.reply(errMsg).catch(() => {});
+          await interaction.reply(msgErro).catch(() => {});
         }
       }
       return;
@@ -33,14 +33,14 @@ module.exports = {
     if (interaction.isButton()) {
       const { customId } = interaction;
 
-      if (customId === 'ticket_create') return createTicket(interaction);
-      if (customId === 'ticket_close') return closeTicket(interaction);
-      if (customId === 'ticket_confirm_close') return confirmCloseTicket(interaction);
-      if (customId === 'ticket_cancel_close') {
-        return interaction.update({ content: '❌ Close cancelled.', components: [], embeds: [] });
+      if (customId === 'ticket_criar') return criarTicket(interaction);
+      if (customId === 'ticket_fechar') return fecharTicket(interaction);
+      if (customId === 'ticket_confirmar_fechar') return confirmarFecharTicket(interaction);
+      if (customId === 'ticket_cancelar_fechar') {
+        return interaction.update({ content: '❌ Fechamento cancelado.', components: [], embeds: [] });
       }
-      if (customId === 'ticket_toggle_ai') return toggleAI(interaction);
-      if (customId === 'ticket_transcript') return saveTranscriptNow(interaction);
+      if (customId === 'ticket_alternar_ia') return alternarIA(interaction);
+      if (customId === 'ticket_transcrito') return salvarTranscritoAgora(interaction);
     }
   },
 };

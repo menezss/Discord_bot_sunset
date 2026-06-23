@@ -1,7 +1,6 @@
 const { Events } = require('discord.js');
-const { getTicketByChannel } = require('../systems/tickets');
-const { askAI } = require('../systems/ai');
-const { logMessageDelete } = require('../systems/logs');
+const { getTicketPorCanal } = require('../systems/tickets');
+const { perguntarIA } = require('../systems/ai');
 const embed = require('../utils/embed');
 
 module.exports = {
@@ -10,28 +9,26 @@ module.exports = {
     if (message.author.bot) return;
     if (!message.guild) return;
 
-    const ticket = getTicketByChannel(message.channel.id);
+    const ticket = getTicketPorCanal(message.channel.id);
     if (!ticket) return;
-
-    if (!ticket.aiEnabled) return;
-
+    if (!ticket.iaAtivada) return;
     if (message.author.id !== ticket.userId) return;
 
     try {
       await message.channel.sendTyping();
-      const response = await askAI(message.channel.id, message.content, message.author.username);
+      const resposta = await perguntarIA(message.channel.id, message.content, message.author.username);
       await message.channel.send({
         embeds: [
-          embed.info('🤖 AI Support', response, [
-            { name: 'Note', value: 'This is an automated AI response. A staff member will assist you soon.' },
+          embed.info('🤖 Suporte com IA', resposta, [
+            { name: 'Aviso', value: 'Esta é uma resposta automática da IA. Um membro da equipe irá te atender em breve.' },
           ]),
         ],
       });
     } catch (err) {
-      console.error('[AI]', err.message);
-      if (err.message.includes('API key')) {
+      console.error('[IA]', err.message);
+      if (err.message.includes('API')) {
         await message.channel.send({
-          embeds: [embed.error('AI Error', 'AI support is not properly configured. Please wait for a staff member.')],
+          embeds: [embed.erro('Erro na IA', 'O suporte com IA não está configurado corretamente. Aguarde um membro da equipe.')],
         });
       }
     }

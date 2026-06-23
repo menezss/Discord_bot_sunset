@@ -5,70 +5,70 @@ function timestamp() {
   return new Date().toISOString();
 }
 
-function buildEmbed(title, description, color, fields = []) {
-  const embed = new EmbedBuilder()
-    .setColor(color || config.embeds.color)
-    .setTitle(title)
-    .setDescription(description)
+function buildEmbed(titulo, descricao, cor, campos = []) {
+  const e = new EmbedBuilder()
+    .setColor(cor || config.embeds.color)
+    .setTitle(titulo)
+    .setDescription(descricao)
     .setTimestamp();
 
   if (config.embeds.footer?.text) {
-    embed.setFooter({
+    e.setFooter({
       text: config.embeds.footer.text,
       iconURL: config.embeds.footer.iconURL || undefined,
     });
   }
 
-  if (fields.length > 0) embed.addFields(fields);
-  if (config.embeds.banner) embed.setImage(config.embeds.banner);
+  if (campos.length > 0) e.addFields(campos);
+  if (config.embeds.banner) e.setImage(config.embeds.banner);
 
-  return embed;
+  return e;
 }
 
-async function sendLog(client, channelId, embed) {
+async function enviarLog(client, channelId, embed) {
   if (!channelId) return;
   try {
-    const channel = await client.channels.fetch(channelId);
-    if (channel?.isTextBased()) await channel.send({ embeds: [embed] });
+    const canal = await client.channels.fetch(channelId);
+    if (canal?.isTextBased()) await canal.send({ embeds: [embed] });
   } catch (err) {
-    console.error(`[Logger] Failed to send log to channel ${channelId}:`, err.message);
+    console.error(`[Logger] Falha ao enviar log para o canal ${channelId}:`, err.message);
   }
 }
 
-async function logModeration(client, action, moderator, target, reason, extra = {}) {
-  console.log(`[${timestamp()}] [MOD] ${action} | Moderator: ${moderator.tag} | Target: ${target.tag} | Reason: ${reason}`);
+async function logModeracao(client, acao, moderador, alvo, motivo, extra = {}) {
+  console.log(`[${timestamp()}] [MOD] ${acao} | Moderador: ${moderador.tag} | Alvo: ${alvo.tag} | Motivo: ${motivo}`);
 
-  const fields = [
-    { name: 'Action', value: action, inline: true },
-    { name: 'Moderator', value: `${moderator.tag} (${moderator.id})`, inline: true },
-    { name: 'Target', value: `${target.tag} (${target.id})`, inline: true },
-    { name: 'Reason', value: reason || 'No reason provided', inline: false },
+  const campos = [
+    { name: 'Ação', value: acao, inline: true },
+    { name: 'Moderador', value: `${moderador.tag} (${moderador.id})`, inline: true },
+    { name: 'Alvo', value: `${alvo.tag} (${alvo.id})`, inline: true },
+    { name: 'Motivo', value: motivo || 'Nenhum motivo informado', inline: false },
   ];
 
-  if (extra.duration) fields.push({ name: 'Duration', value: extra.duration, inline: true });
+  if (extra.duracao) campos.push({ name: 'Duração', value: extra.duracao, inline: true });
 
-  const embed = buildEmbed(`🔨 Moderation — ${action}`, `A moderation action was performed.`, config.embeds.color, fields);
-  await sendLog(client, config.logs.moderationChannelId || config.logs.channelId, embed);
+  const embed = buildEmbed(`🔨 Moderação — ${acao}`, 'Uma ação de moderação foi executada.', config.embeds.color, campos);
+  await enviarLog(client, config.logs.moderationChannelId || config.logs.channelId, embed);
 }
 
-async function logTicket(client, action, user, channel, extra = {}) {
-  console.log(`[${timestamp()}] [TICKET] ${action} | User: ${user.tag} | Channel: ${channel?.name}`);
+async function logTicket(client, acao, usuario, canal, extra = {}) {
+  console.log(`[${timestamp()}] [TICKET] ${acao} | Usuário: ${usuario.tag} | Canal: ${canal?.name}`);
 
-  const fields = [
-    { name: 'Action', value: action, inline: true },
-    { name: 'User', value: `${user.tag} (${user.id})`, inline: true },
+  const campos = [
+    { name: 'Ação', value: acao, inline: true },
+    { name: 'Usuário', value: `${usuario.tag} (${usuario.id})`, inline: true },
   ];
-  if (channel) fields.push({ name: 'Channel', value: `${channel.name} (${channel.id})`, inline: true });
-  if (extra.closedBy) fields.push({ name: 'Closed By', value: `${extra.closedBy.tag}`, inline: true });
+  if (canal) campos.push({ name: 'Canal', value: `${canal.name} (${canal.id})`, inline: true });
+  if (extra.closedBy) campos.push({ name: 'Fechado Por', value: `${extra.closedBy.tag}`, inline: true });
 
-  const embed = buildEmbed(`🎫 Ticket — ${action}`, `A ticket event occurred.`, config.embeds.color, fields);
-  await sendLog(client, config.logs.ticketChannelId || config.logs.channelId, embed);
+  const embed = buildEmbed(`🎫 Ticket — ${acao}`, 'Um evento de ticket ocorreu.', config.embeds.color, campos);
+  await enviarLog(client, config.logs.ticketChannelId || config.logs.channelId, embed);
 }
 
-async function logGeneral(client, title, description, fields = []) {
-  console.log(`[${timestamp()}] [LOG] ${title}: ${description}`);
-  const embed = buildEmbed(title, description, config.embeds.color, fields);
-  await sendLog(client, config.logs.channelId, embed);
+async function logGeral(client, titulo, descricao, campos = []) {
+  console.log(`[${timestamp()}] [LOG] ${titulo}: ${descricao}`);
+  const embed = buildEmbed(titulo, descricao, config.embeds.color, campos);
+  await enviarLog(client, config.logs.channelId, embed);
 }
 
-module.exports = { buildEmbed, logModeration, logTicket, logGeneral };
+module.exports = { buildEmbed, logModeracao, logTicket, logGeral };

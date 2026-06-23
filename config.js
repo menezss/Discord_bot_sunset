@@ -29,7 +29,7 @@ module.exports = {
     categoryId: null,
     logChannelId: null,
     supportRoleId: null,
-    maxTicketsPerUser: 1,
+    maxTicketsPorUsuario: 1,
     transcriptChannelId: null,
   },
 
@@ -42,7 +42,7 @@ module.exports = {
   ai: {
     model: 'gpt-4o-mini',
     systemPrompt:
-      'You are a helpful support assistant for this Discord server. Answer user questions concisely and helpfully. If you cannot help, suggest they wait for a staff member.',
+      'Você é um assistente de suporte prestativo deste servidor do Discord. Responda as perguntas dos usuários de forma clara e concisa em português do Brasil. Se não puder ajudar, sugira que o usuário aguarde um membro da equipe.',
     maxTokens: 500,
   },
 };

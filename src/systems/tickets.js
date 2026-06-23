@@ -11,135 +11,135 @@ const config = require('../../config');
 const { buildEmbed, logTicket } = require('../utils/logger');
 const { clearHistory } = require('./ai');
 
-const activeTickets = new Map();
+const ticketsAtivos = new Map();
 
-function getTicketByUser(userId) {
-  for (const [channelId, data] of activeTickets.entries()) {
-    if (data.userId === userId) return { channelId, ...data };
+function getTicketPorUsuario(userId) {
+  for (const [channelId, dados] of ticketsAtivos.entries()) {
+    if (dados.userId === userId) return { channelId, ...dados };
   }
   return null;
 }
 
-function getTicketByChannel(channelId) {
-  return activeTickets.get(channelId) || null;
+function getTicketPorCanal(channelId) {
+  return ticketsAtivos.get(channelId) || null;
 }
 
-async function generateTranscript(channel, ticket) {
+async function gerarTranscrito(canal, ticket) {
   try {
-    const messages = [];
+    const mensagens = [];
     let lastId;
 
     while (true) {
       const opts = { limit: 100 };
       if (lastId) opts.before = lastId;
-      const batch = await channel.messages.fetch(opts);
-      if (batch.size === 0) break;
-      messages.push(...batch.values());
-      lastId = batch.last().id;
-      if (batch.size < 100) break;
+      const lote = await canal.messages.fetch(opts);
+      if (lote.size === 0) break;
+      mensagens.push(...lote.values());
+      lastId = lote.last().id;
+      if (lote.size < 100) break;
     }
 
-    messages.reverse();
+    mensagens.reverse();
 
-    const lines = [
+    const linhas = [
       `═══════════════════════════════════════════════`,
-      `  TICKET TRANSCRIPT`,
+      `  TRANSCRITO DO TICKET`,
       `═══════════════════════════════════════════════`,
-      `  Ticket:   ${channel.name}`,
-      `  User:     ${ticket.username} (${ticket.userId})`,
-      `  Opened:   ${new Date(ticket.createdAt).toUTCString()}`,
-      `  Closed:   ${new Date().toUTCString()}`,
-      `  Messages: ${messages.length}`,
+      `  Ticket:    ${canal.name}`,
+      `  Usuário:   ${ticket.username} (${ticket.userId})`,
+      `  Aberto:    ${new Date(ticket.criadoEm).toLocaleString('pt-BR')}`,
+      `  Fechado:   ${new Date().toLocaleString('pt-BR')}`,
+      `  Mensagens: ${mensagens.length}`,
       `═══════════════════════════════════════════════`,
       '',
     ];
 
-    for (const msg of messages) {
+    for (const msg of mensagens) {
       if (msg.author.bot && msg.embeds.length > 0 && !msg.content) {
         const e = msg.embeds[0];
-        lines.push(`[${new Date(msg.createdTimestamp).toUTCString()}] [BOT EMBED] ${e.title || ''}: ${e.description || ''}`);
+        linhas.push(`[${new Date(msg.createdTimestamp).toLocaleString('pt-BR')}] [BOT EMBED] ${e.title || ''}: ${e.description || ''}`);
       } else if (msg.content) {
-        lines.push(`[${new Date(msg.createdTimestamp).toUTCString()}] ${msg.author.tag}: ${msg.content}`);
+        linhas.push(`[${new Date(msg.createdTimestamp).toLocaleString('pt-BR')}] ${msg.author.tag}: ${msg.content}`);
       }
       if (msg.attachments.size > 0) {
-        for (const att of msg.attachments.values()) {
-          lines.push(`  [Attachment] ${att.name}: ${att.url}`);
+        for (const anexo of msg.attachments.values()) {
+          linhas.push(`  [Anexo] ${anexo.name}: ${anexo.url}`);
         }
       }
     }
 
-    lines.push('', `═══════════════════════════════════════════════`);
-    lines.push(`  End of transcript`);
-    lines.push(`═══════════════════════════════════════════════`);
+    linhas.push('', `═══════════════════════════════════════════════`);
+    linhas.push(`  Fim do transcrito`);
+    linhas.push(`═══════════════════════════════════════════════`);
 
-    return Buffer.from(lines.join('\n'), 'utf-8');
+    return Buffer.from(linhas.join('\n'), 'utf-8');
   } catch (err) {
-    console.error('[Tickets] Transcript generation failed:', err.message);
+    console.error('[Tickets] Falha ao gerar transcrito:', err.message);
     return null;
   }
 }
 
-async function sendTranscript(client, channel, ticket, closedBy) {
-  const transcriptChannelId = config.tickets.transcriptChannelId || config.logs.ticketChannelId || config.logs.channelId;
-  const buf = await generateTranscript(channel, ticket);
+async function enviarTranscrito(client, canal, ticket, fechadoPor) {
+  const canalTranscritoId = config.tickets.transcriptChannelId || config.logs.ticketChannelId || config.logs.channelId;
+  const buf = await gerarTranscrito(canal, ticket);
   if (!buf) return;
 
-  const attachment = new AttachmentBuilder(buf, { name: `transcript-${channel.name}.txt` });
+  const anexo = new AttachmentBuilder(buf, { name: `transcrito-${canal.name}.txt` });
 
-  const transcriptEmbed = new EmbedBuilder()
+  const embedTranscrito = new EmbedBuilder()
     .setColor(config.embeds.color)
-    .setTitle('📄 Ticket Transcript')
-    .setDescription(`Transcript for **${channel.name}**`)
+    .setTitle('📄 Transcrito do Ticket')
+    .setDescription(`Transcrito de **${canal.name}**`)
     .addFields(
-      { name: 'User', value: `${ticket.username} (<@${ticket.userId}>)`, inline: true },
-      { name: 'Closed By', value: closedBy ? `${closedBy.tag}` : 'Unknown', inline: true },
-      { name: 'Opened', value: `<t:${Math.floor(new Date(ticket.createdAt).getTime() / 1000)}:F>`, inline: false },
-      { name: 'Closed', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
+      { name: 'Usuário', value: `${ticket.username} (<@${ticket.userId}>)`, inline: true },
+      { name: 'Fechado Por', value: fechadoPor ? `${fechadoPor.tag}` : 'Desconhecido', inline: true },
+      { name: 'Aberto em', value: `<t:${Math.floor(new Date(ticket.criadoEm).getTime() / 1000)}:F>`, inline: false },
+      { name: 'Fechado em', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
     )
     .setTimestamp()
     .setFooter({ text: config.embeds.footer.text });
 
-  if (transcriptChannelId) {
+  if (canalTranscritoId) {
     try {
-      const transcriptChannel = await client.channels.fetch(transcriptChannelId);
-      if (transcriptChannel?.isTextBased()) {
-        await transcriptChannel.send({ embeds: [transcriptEmbed], files: [attachment] });
+      const canalDestino = await client.channels.fetch(canalTranscritoId);
+      if (canalDestino?.isTextBased()) {
+        await canalDestino.send({ embeds: [embedTranscrito], files: [anexo] });
       }
     } catch (err) {
-      console.error('[Tickets] Failed to send transcript to channel:', err.message);
+      console.error('[Tickets] Falha ao enviar transcrito para o canal:', err.message);
     }
   }
 
-  const ticketOwner = await client.users.fetch(ticket.userId).catch(() => null);
-  if (ticketOwner) {
+  const donoDaTicket = await client.users.fetch(ticket.userId).catch(() => null);
+  if (donoDaTicket) {
     try {
-      const dmBuf = await generateTranscript(channel, ticket);
-      if (dmBuf) {
-        const dmAttachment = new AttachmentBuilder(dmBuf, { name: `transcript-${channel.name}.txt` });
-        await ticketOwner.send({
-          embeds: [buildEmbed('📄 Your Ticket Transcript', `Your ticket **${channel.name}** has been closed. Your transcript is attached.`, config.embeds.color)],
-          files: [dmAttachment],
+      const bufDm = await gerarTranscrito(canal, ticket);
+      if (bufDm) {
+        const anexoDm = new AttachmentBuilder(bufDm, { name: `transcrito-${canal.name}.txt` });
+        await donoDaTicket.send({
+          embeds: [buildEmbed('📄 Transcrito do Seu Ticket', `Seu ticket **${canal.name}** foi fechado. O transcrito está em anexo.`, config.embeds.color)],
+          files: [anexoDm],
         });
       }
     } catch {}
   }
 }
 
-async function createTicket(interaction) {
+async function criarTicket(interaction) {
   const { guild, user } = interaction;
 
-  const existing = getTicketByUser(user.id);
-  if (existing) {
+  const existente = getTicketPorUsuario(user.id);
+  if (existente) {
     return interaction.reply({
-      embeds: [buildEmbed('Ticket Already Open', `You already have an open ticket: <#${existing.channelId}>`, config.embeds.warningColor)],
+      embeds: [buildEmbed('Ticket Já Aberto', `Você já possui um ticket aberto: <#${existente.channelId}>`, config.embeds.warningColor)],
       ephemeral: true,
     });
   }
 
   const categoryId = config.tickets.categoryId;
-  const channelName = `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString().slice(-4)}`;
+  const nomeCanal = `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString().slice(-4)}`;
 
-  const permissionOverwrites = [
+  const permissoes = [
     { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
     {
       id: user.id,
@@ -152,236 +152,236 @@ async function createTicket(interaction) {
   ];
 
   if (config.tickets.supportRoleId) {
-    permissionOverwrites.push({
+    permissoes.push({
       id: config.tickets.supportRoleId,
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
     });
   }
 
-  const channelOptions = {
-    name: channelName,
+  const opcoesCanal = {
+    name: nomeCanal,
     type: ChannelType.GuildText,
-    permissionOverwrites,
-    topic: `Support ticket for ${user.tag} | User ID: ${user.id}`,
+    permissionOverwrites: permissoes,
+    topic: `Ticket de suporte de ${user.tag} | ID: ${user.id}`,
   };
 
   if (categoryId) {
     try {
-      const cat = await guild.channels.fetch(categoryId);
-      if (cat) channelOptions.parent = categoryId;
+      const categoria = await guild.channels.fetch(categoryId);
+      if (categoria) opcoesCanal.parent = categoryId;
     } catch {}
   }
 
-  let ticketChannel;
+  let canalTicket;
   try {
-    ticketChannel = await guild.channels.create(channelOptions);
+    canalTicket = await guild.channels.create(opcoesCanal);
   } catch (err) {
-    console.error('[Tickets] Failed to create channel:', err.message);
+    console.error('[Tickets] Falha ao criar canal:', err.message);
     return interaction.reply({
-      embeds: [buildEmbed('Error', 'Failed to create your ticket. Please contact a staff member.', config.embeds.errorColor)],
+      embeds: [buildEmbed('Erro', 'Falha ao criar o ticket. Entre em contato com um membro da equipe.', config.embeds.errorColor)],
       ephemeral: true,
     });
   }
 
-  activeTickets.set(ticketChannel.id, {
+  ticketsAtivos.set(canalTicket.id, {
     userId: user.id,
     username: user.tag,
-    createdAt: new Date(),
-    aiEnabled: !!config.openaiKey,
+    criadoEm: new Date(),
+    iaAtivada: !!config.openaiKey,
   });
 
-  const controlRow = new ActionRowBuilder().addComponents(
+  const botoesControle = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('ticket_close')
-      .setLabel('Close Ticket')
+      .setCustomId('ticket_fechar')
+      .setLabel('Fechar Ticket')
       .setStyle(ButtonStyle.Danger)
       .setEmoji('🔒'),
     new ButtonBuilder()
-      .setCustomId('ticket_toggle_ai')
-      .setLabel('Toggle AI')
+      .setCustomId('ticket_alternar_ia')
+      .setLabel('Alternar IA')
       .setStyle(ButtonStyle.Secondary)
       .setEmoji('🤖'),
     new ButtonBuilder()
-      .setCustomId('ticket_transcript')
-      .setLabel('Save Transcript')
+      .setCustomId('ticket_transcrito')
+      .setLabel('Salvar Transcrito')
       .setStyle(ButtonStyle.Secondary)
       .setEmoji('📄'),
   );
 
-  const welcomeEmbed = new EmbedBuilder()
+  const embedBemVindo = new EmbedBuilder()
     .setColor(config.embeds.color)
-    .setTitle('🎫 Support Ticket')
+    .setTitle('🎫 Ticket de Suporte')
     .addFields(
-      { name: 'User', value: `<@${user.id}>`, inline: true },
-      { name: 'Opened', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
+      { name: 'Usuário', value: `<@${user.id}>`, inline: true },
+      { name: 'Aberto em', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
     )
     .setDescription(
-      `Welcome, <@${user.id}>! A staff member will assist you shortly.\n\n` +
-      `${config.openaiKey ? '🤖 **AI Support is active** — ask questions while you wait for staff.\n\n' : ''}` +
-      `Please describe your issue in as much detail as possible.`
+      `Olá, <@${user.id}>! Um membro da equipe irá te atender em breve.\n\n` +
+      `${config.openaiKey ? '🤖 **Suporte com IA está ativo** — você pode fazer perguntas enquanto aguarda a equipe.\n\n' : ''}` +
+      `Descreva seu problema com o máximo de detalhes possível.`
     )
     .setTimestamp()
     .setFooter({ text: config.embeds.footer.text });
 
-  if (config.embeds.banner) welcomeEmbed.setImage(config.embeds.banner);
+  if (config.embeds.banner) embedBemVindo.setImage(config.embeds.banner);
 
-  await ticketChannel.send({ content: `<@${user.id}>`, embeds: [welcomeEmbed], components: [controlRow] });
+  await canalTicket.send({ content: `<@${user.id}>`, embeds: [embedBemVindo], components: [botoesControle] });
 
   await interaction.reply({
-    embeds: [buildEmbed('✅ Ticket Created', `Your ticket has been created: <#${ticketChannel.id}>`, config.embeds.successColor)],
+    embeds: [buildEmbed('✅ Ticket Criado', `Seu ticket foi criado: <#${canalTicket.id}>`, config.embeds.successColor)],
     ephemeral: true,
   });
 
-  await logTicket(interaction.client, 'Opened', user, ticketChannel);
+  await logTicket(interaction.client, 'Aberto', user, canalTicket);
 }
 
-async function closeTicket(interaction) {
+async function fecharTicket(interaction) {
   const { channel } = interaction;
-  const ticket = getTicketByChannel(channel.id);
+  const ticket = getTicketPorCanal(channel.id);
 
   if (!ticket) {
     return interaction.reply({
-      embeds: [buildEmbed('Error', 'This is not a ticket channel.', config.embeds.errorColor)],
+      embeds: [buildEmbed('Erro', 'Este não é um canal de ticket.', config.embeds.errorColor)],
       ephemeral: true,
     });
   }
 
-  const confirmRow = new ActionRowBuilder().addComponents(
+  const botoesConfirmar = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('ticket_confirm_close')
-      .setLabel('Confirm Close')
+      .setCustomId('ticket_confirmar_fechar')
+      .setLabel('Confirmar Fechamento')
       .setStyle(ButtonStyle.Danger)
       .setEmoji('🔒'),
     new ButtonBuilder()
-      .setCustomId('ticket_cancel_close')
-      .setLabel('Cancel')
+      .setCustomId('ticket_cancelar_fechar')
+      .setLabel('Cancelar')
       .setStyle(ButtonStyle.Secondary)
       .setEmoji('✖️'),
   );
 
   await interaction.reply({
-    embeds: [buildEmbed('🔒 Close Ticket', 'Are you sure you want to close this ticket? A transcript will be saved automatically.', config.embeds.warningColor)],
-    components: [confirmRow],
+    embeds: [buildEmbed('🔒 Fechar Ticket', 'Tem certeza que deseja fechar este ticket? Um transcrito será salvo automaticamente.', config.embeds.warningColor)],
+    components: [botoesConfirmar],
     ephemeral: true,
   });
 }
 
-async function confirmCloseTicket(interaction) {
+async function confirmarFecharTicket(interaction) {
   const { channel, user } = interaction;
-  const ticket = getTicketByChannel(channel.id);
+  const ticket = getTicketPorCanal(channel.id);
 
   if (!ticket) {
     return interaction.reply({
-      embeds: [buildEmbed('Error', 'This is not a ticket channel.', config.embeds.errorColor)],
+      embeds: [buildEmbed('Erro', 'Este não é um canal de ticket.', config.embeds.errorColor)],
       ephemeral: true,
     });
   }
 
-  await interaction.update({ content: '📄 Saving transcript and closing ticket...', components: [], embeds: [] });
+  await interaction.update({ content: '📄 Salvando transcrito e fechando ticket...', components: [], embeds: [] });
 
   await channel.send({
-    embeds: [buildEmbed('🔒 Ticket Closing', `Closed by **${user.tag}**. Generating transcript, channel will be deleted in 10 seconds...`, config.embeds.errorColor)],
+    embeds: [buildEmbed('🔒 Ticket Sendo Fechado', `Fechado por **${user.tag}**. Gerando transcrito, o canal será deletado em 10 segundos...`, config.embeds.errorColor)],
   });
 
   clearHistory(channel.id);
-  activeTickets.delete(channel.id);
+  ticketsAtivos.delete(channel.id);
 
-  await sendTranscript(interaction.client, channel, ticket, user);
+  await enviarTranscrito(interaction.client, channel, ticket, user);
 
-  const ticketOwner = await interaction.client.users.fetch(ticket.userId).catch(() => null);
-  if (ticketOwner) {
-    await logTicket(interaction.client, 'Closed', ticketOwner, channel, { closedBy: user });
+  const donoTicket = await interaction.client.users.fetch(ticket.userId).catch(() => null);
+  if (donoTicket) {
+    await logTicket(interaction.client, 'Fechado', donoTicket, channel, { closedBy: user });
   }
 
   setTimeout(() => channel.delete().catch(() => {}), 10000);
 }
 
-async function saveTranscriptNow(interaction) {
-  const ticket = getTicketByChannel(interaction.channel.id);
+async function salvarTranscritoAgora(interaction) {
+  const ticket = getTicketPorCanal(interaction.channel.id);
   if (!ticket) {
     return interaction.reply({
-      embeds: [buildEmbed('Error', 'This is not a ticket channel.', config.embeds.errorColor)],
+      embeds: [buildEmbed('Erro', 'Este não é um canal de ticket.', config.embeds.errorColor)],
       ephemeral: true,
     });
   }
 
   await interaction.deferReply({ ephemeral: true });
 
-  const buf = await generateTranscript(interaction.channel, ticket);
+  const buf = await gerarTranscrito(interaction.channel, ticket);
   if (!buf) {
-    return interaction.editReply({ embeds: [buildEmbed('Error', 'Failed to generate transcript.', config.embeds.errorColor)] });
+    return interaction.editReply({ embeds: [buildEmbed('Erro', 'Falha ao gerar o transcrito.', config.embeds.errorColor)] });
   }
 
-  const attachment = new AttachmentBuilder(buf, { name: `transcript-${interaction.channel.name}.txt` });
+  const anexo = new AttachmentBuilder(buf, { name: `transcrito-${interaction.channel.name}.txt` });
   await interaction.editReply({
-    embeds: [buildEmbed('📄 Transcript Saved', 'Here is the current transcript of this ticket.', config.embeds.successColor)],
-    files: [attachment],
+    embeds: [buildEmbed('📄 Transcrito Salvo', 'Aqui está o transcrito atual deste ticket.', config.embeds.successColor)],
+    files: [anexo],
   });
 }
 
-async function toggleAI(interaction) {
-  const ticket = getTicketByChannel(interaction.channel.id);
+async function alternarIA(interaction) {
+  const ticket = getTicketPorCanal(interaction.channel.id);
   if (!ticket) {
     return interaction.reply({
-      embeds: [buildEmbed('Error', 'This is not a ticket channel.', config.embeds.errorColor)],
+      embeds: [buildEmbed('Erro', 'Este não é um canal de ticket.', config.embeds.errorColor)],
       ephemeral: true,
     });
   }
 
   if (!config.openaiKey) {
     return interaction.reply({
-      embeds: [buildEmbed('AI Not Configured', 'OpenAI API key is not set up.', config.embeds.warningColor)],
+      embeds: [buildEmbed('IA Não Configurada', 'A chave da API OpenAI não está configurada.', config.embeds.warningColor)],
       ephemeral: true,
     });
   }
 
-  ticket.aiEnabled = !ticket.aiEnabled;
-  activeTickets.set(interaction.channel.id, ticket);
+  ticket.iaAtivada = !ticket.iaAtivada;
+  ticketsAtivos.set(interaction.channel.id, ticket);
 
   return interaction.reply({
     embeds: [buildEmbed(
-      ticket.aiEnabled ? '🤖 AI Support Enabled' : '🤖 AI Support Disabled',
-      ticket.aiEnabled ? 'AI will now respond to messages in this ticket.' : 'AI support has been disabled for this ticket.',
-      ticket.aiEnabled ? config.embeds.successColor : config.embeds.warningColor,
+      ticket.iaAtivada ? '🤖 Suporte com IA Ativado' : '🤖 Suporte com IA Desativado',
+      ticket.iaAtivada ? 'A IA irá responder às mensagens neste ticket.' : 'O suporte com IA foi desativado para este ticket.',
+      ticket.iaAtivada ? config.embeds.successColor : config.embeds.warningColor,
     )],
     ephemeral: true,
   });
 }
 
-async function sendTicketPanel(channel) {
-  const row = new ActionRowBuilder().addComponents(
+async function enviarPainelTicket(canal) {
+  const botao = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('ticket_create')
-      .setLabel('Open a Ticket')
+      .setCustomId('ticket_criar')
+      .setLabel('Abrir Ticket')
       .setStyle(ButtonStyle.Primary)
       .setEmoji('🎫'),
   );
 
   const embed = new EmbedBuilder()
     .setColor(config.embeds.color)
-    .setTitle('🎫 Support Tickets')
+    .setTitle('🎫 Suporte via Tickets')
     .setDescription(
-      'Need help? Click the button below to open a support ticket.\nA staff member will assist you as soon as possible.\n\n' +
-      '**Before opening a ticket:**\n' +
-      '• Describe your issue clearly\n' +
-      '• Include any relevant screenshots\n' +
-      '• Be patient while staff respond'
+      'Precisa de ajuda? Clique no botão abaixo para abrir um ticket de suporte.\nUm membro da equipe irá te atender o mais breve possível.\n\n' +
+      '**Antes de abrir um ticket:**\n' +
+      '• Descreva seu problema com clareza\n' +
+      '• Inclua capturas de tela relevantes\n' +
+      '• Seja paciente enquanto a equipe responde'
     )
     .setTimestamp()
     .setFooter({ text: config.embeds.footer.text });
 
   if (config.embeds.banner) embed.setImage(config.embeds.banner);
 
-  await channel.send({ embeds: [embed], components: [row] });
+  await canal.send({ embeds: [embed], components: [botao] });
 }
 
 module.exports = {
-  createTicket,
-  closeTicket,
-  confirmCloseTicket,
-  saveTranscriptNow,
-  toggleAI,
-  sendTicketPanel,
-  getTicketByChannel,
-  getTicketByUser,
+  criarTicket,
+  fecharTicket,
+  confirmarFecharTicket,
+  salvarTranscritoAgora,
+  alternarIA,
+  enviarPainelTicket,
+  getTicketPorCanal,
+  getTicketPorUsuario,
 };
