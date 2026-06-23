@@ -6,8 +6,7 @@ const embed = require('../utils/embed');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('corrigirpermissoes')
-    .setDescription('Gera um link OAuth2 para convidar o bot com as permissões corretas.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .setDescription('Gera um link OAuth2 para convidar o bot com as permissões corretas.'),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.admin)) {

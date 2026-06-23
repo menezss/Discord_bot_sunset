@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
@@ -9,8 +9,7 @@ module.exports = {
     .setDescription('Bane um usuário do servidor.')
     .addUserOption(opt => opt.setName('usuario').setDescription('O usuário a ser banido').setRequired(true))
     .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do banimento').setRequired(false))
-    .addIntegerOption(opt => opt.setName('apagar_dias').setDescription('Dias de mensagens a apagar (0-7)').setMinValue(0).setMaxValue(7).setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    .addIntegerOption(opt => opt.setName('apagar_dias').setDescription('Dias de mensagens a apagar (0-7)').setMinValue(0).setMaxValue(7).setRequired(false)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

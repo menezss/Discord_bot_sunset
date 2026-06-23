@@ -19,8 +19,7 @@ const PERMISSOES_VERIFICAR = [
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('verificarpermissoes')
-    .setDescription('Verifica quais permissões do bot estão faltando no servidor.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .setDescription('Verifica quais permissões do bot estão faltando no servidor.'),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.suporte)) {

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { removerAdvertencia, limparAdvertencias } = require('../systems/advertencias');
 const { logModeracao } = require('../utils/logger');
@@ -10,8 +10,7 @@ module.exports = {
     .setDescription('Remove uma advertência específica ou todas as de um usuário.')
     .addUserOption(opt => opt.setName('usuario').setDescription('O usuário').setRequired(true))
     .addIntegerOption(opt => opt.setName('numero').setDescription('Número da advertência (use /advertencias para ver a lista)').setMinValue(1).setRequired(false))
-    .addBooleanOption(opt => opt.setName('limpar_tudo').setDescription('Remove TODAS as advertências do usuário').setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+    .addBooleanOption(opt => opt.setName('limpar_tudo').setDescription('Remove TODAS as advertências do usuário').setRequired(false)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

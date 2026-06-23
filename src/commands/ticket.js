@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { enviarPainelTicket } = require('../systems/tickets');
 const embed = require('../utils/embed');
@@ -7,8 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('ticket')
     .setDescription('Comandos do sistema de tickets.')
-    .addSubcommand(sub => sub.setName('painel').setDescription('Envia o painel de tickets neste canal.'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .addSubcommand(sub => sub.setName('painel').setDescription('Envia o painel de tickets neste canal.')),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.suporte)) {

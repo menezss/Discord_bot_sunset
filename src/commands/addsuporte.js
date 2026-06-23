@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, adicionarPermissao, NIVEIS } = require('../systems/permissoes');
 const embed = require('../utils/embed');
 
@@ -6,8 +6,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('addsuporte')
     .setDescription('Adiciona um usuário como Suporte do bot.')
-    .addUserOption(opt => opt.setName('usuario').setDescription('O usuário a promover').setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .addUserOption(opt => opt.setName('usuario').setDescription('O usuário a promover').setRequired(true)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

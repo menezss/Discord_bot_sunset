@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
@@ -8,8 +8,7 @@ module.exports = {
     .setName('expulsar')
     .setDescription('Expulsa um usuário do servidor.')
     .addUserOption(opt => opt.setName('usuario').setDescription('O usuário a ser expulso').setRequired(true))
-    .addStringOption(opt => opt.setName('motivo').setDescription('Motivo da expulsão').setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+    .addStringOption(opt => opt.setName('motivo').setDescription('Motivo da expulsão').setRequired(false)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

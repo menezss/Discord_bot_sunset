@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { fecharTicket } = require('../systems/tickets');
 const embed = require('../utils/embed');
@@ -6,8 +6,7 @@ const embed = require('../utils/embed');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('fecharticket')
-    .setDescription('Fecha o ticket do canal atual.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    .setDescription('Fecha o ticket do canal atual.'),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.suporte)) {

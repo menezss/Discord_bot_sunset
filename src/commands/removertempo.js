@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
@@ -8,8 +8,7 @@ module.exports = {
     .setName('removertempo')
     .setDescription('Remove o silenciamento de um usuário.')
     .addUserOption(opt => opt.setName('usuario').setDescription('O usuário a dessilenciar').setRequired(true))
-    .addStringOption(opt => opt.setName('motivo').setDescription('Motivo da remoção').setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+    .addStringOption(opt => opt.setName('motivo').setDescription('Motivo da remoção').setRequired(false)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

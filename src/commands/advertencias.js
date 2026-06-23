@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { getAdvertencias } = require('../systems/advertencias');
 const embed = require('../utils/embed');
@@ -7,8 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('advertencias')
     .setDescription('Exibe todas as advertências de um usuário.')
-    .addUserOption(opt => opt.setName('usuario').setDescription('O usuário a verificar').setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+    .addUserOption(opt => opt.setName('usuario').setDescription('O usuário a verificar').setRequired(true)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

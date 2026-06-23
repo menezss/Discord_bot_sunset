@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
@@ -8,8 +8,7 @@ module.exports = {
     .setName('desbanir')
     .setDescription('Remove o banimento de um usuário pelo ID.')
     .addStringOption(opt => opt.setName('id').setDescription('ID do usuário banido').setRequired(true))
-    .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do desbanimento').setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+    .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do desbanimento').setRequired(false)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

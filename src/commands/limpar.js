@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
@@ -8,8 +8,7 @@ module.exports = {
     .setName('limpar')
     .setDescription('Apaga mensagens do canal.')
     .addIntegerOption(opt => opt.setName('quantidade').setDescription('Número de mensagens a apagar (1-100)').setMinValue(1).setMaxValue(100).setRequired(true))
-    .addUserOption(opt => opt.setName('usuario').setDescription('Apagar apenas mensagens deste usuário').setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+    .addUserOption(opt => opt.setName('usuario').setDescription('Apagar apenas mensagens deste usuário').setRequired(false)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

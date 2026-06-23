@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
@@ -34,8 +34,7 @@ module.exports = {
           { name: '7 Dias', value: '7d' },
         )
     )
-    .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do silenciamento').setRequired(false))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+    .addStringOption(opt => opt.setName('motivo').setDescription('Motivo do silenciamento').setRequired(false)),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.moderador)) {

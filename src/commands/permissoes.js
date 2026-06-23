@@ -1,12 +1,11 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { checkPermissao, getNomeNivel, listarNivel, NIVEIS } = require('../systems/permissoes');
 const embed = require('../utils/embed');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('permissoes')
-    .setDescription('Exibe as permissões do bot e os usuários em cada nível.')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .setDescription('Exibe as permissões do bot e os usuários em cada nível.'),
 
   async execute(interaction) {
     if (!checkPermissao(interaction, NIVEIS.suporte)) {
