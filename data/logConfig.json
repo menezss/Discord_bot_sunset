@@ -1,0 +1,10 @@
+{
+  "canal_entrada": "1518972449209974835",
+  "canal_saida": "1518972485788368896",
+  "canal_moderacao": null,
+  "canal_geral": null,
+  "mensagem_entrada": "Olá {usuario} seja bem vindo(a) a {servidor} faça boas comprar!",
+  "mensagem_saida": "Poxa {usuario} que pena que saiu, esperamos que volte logo!",
+  "cor_entrada": "#57F287",
+  "cor_saida": "#ED4245"
+}
