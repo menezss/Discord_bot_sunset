@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const embed = require('../utils/embed');
 
 const PERMISSOES_VERIFICAR = [
@@ -22,28 +23,26 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
+    if (!checkPermissao(interaction, NIVEIS.suporte)) {
+      return interaction.reply({ embeds: [embed.erro('Sem Permissão', 'Você não tem permissão para usar este comando.')], ephemeral: true });
+    }
+
     await interaction.deferReply({ ephemeral: true });
 
     const botMembro = await interaction.guild.members.fetchMe();
     const permsBot = botMembro.permissions;
+    const temAdmin = permsBot.has(PermissionFlagsBits.Administrator);
 
     const presentes = [];
     const faltando = [];
 
     for (const perm of PERMISSOES_VERIFICAR) {
-      if (permsBot.has(perm.flag)) {
-        presentes.push(`✅ ${perm.nome}`);
-      } else {
-        faltando.push(`❌ ${perm.nome}`);
-      }
+      if (permsBot.has(perm.flag)) presentes.push(`✅ ${perm.nome}`);
+      else faltando.push(`❌ ${perm.nome}`);
     }
-
-    const temAdmin = permsBot.has(PermissionFlagsBits.Administrator);
 
     let descricao = '';
-    if (temAdmin) {
-      descricao = '⭐ **O bot possui permissão de Administrador**, então todas as ações estão liberadas.\n\n';
-    }
+    if (temAdmin) descricao = '⭐ **O bot possui permissão de Administrador** — todas as ações estão liberadas.\n\n';
 
     if (faltando.length === 0) {
       descricao += '✅ **Todas as permissões necessárias estão configuradas corretamente!**';
@@ -52,14 +51,9 @@ module.exports = {
       descricao += '\n\n💡 Use `/corrigirpermissoes` para obter um link de convite com as permissões corretas.';
     }
 
-    const corEmbed = faltando.length === 0 ? 'sucesso' : faltando.length >= 5 ? 'erro' : 'aviso';
     const embedFn = faltando.length === 0 ? embed.sucesso : faltando.length >= 5 ? embed.erro : embed.aviso;
-
     return interaction.editReply({
-      embeds: [embedFn(
-        `🔍 Verificação de Permissões — ${faltando.length === 0 ? 'Tudo OK' : `${faltando.length} faltando`}`,
-        descricao
-      )],
+      embeds: [embedFn(`🔍 Verificação — ${faltando.length === 0 ? 'Tudo OK' : `${faltando.length} faltando`}`, descricao)],
     });
   },
 };

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { isModerador } = require('../systems/permissoes');
+const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
 
@@ -12,7 +12,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
 
   async execute(interaction) {
-    if (!isModerador(interaction.user.id)) {
+    if (!checkPermissao(interaction, NIVEIS.moderador)) {
       return interaction.reply({ embeds: [embed.erro('Sem Permissão', 'Você não tem permissão para usar este comando.')], ephemeral: true });
     }
 
@@ -24,9 +24,7 @@ module.exports = {
     try {
       let mensagens = await interaction.channel.messages.fetch({ limit: 100 });
 
-      if (usuarioAlvo) {
-        mensagens = mensagens.filter(m => m.author.id === usuarioAlvo.id);
-      }
+      if (usuarioAlvo) mensagens = mensagens.filter(m => m.author.id === usuarioAlvo.id);
 
       mensagens = [...mensagens.values()].slice(0, quantidade);
 
@@ -41,17 +39,15 @@ module.exports = {
       }
 
       let resumo = `**${deletadas}** mensagem(ns) apagada(s).`;
-      if (muitoAntigas > 0) resumo += ` (${muitoAntigas} mensagem(ns) muito antigas para apagar.)`;
+      if (muitoAntigas > 0) resumo += ` (${muitoAntigas} muito antiga(s) para apagar.)`;
       if (usuarioAlvo) resumo += ` De: **${usuarioAlvo.tag}**`;
 
       await interaction.editReply({ embeds: [embed.sucesso('Mensagens Apagadas', resumo)] });
 
       await logModeracao(
-        interaction.client,
-        'Limpar Mensagens',
-        interaction.user,
+        interaction.client, 'Limpar Mensagens', interaction.user,
         { tag: usuarioAlvo?.tag || 'Canal', id: usuarioAlvo?.id || interaction.channel.id },
-        `${deletadas} mensagem(ns) apagada(s)${usuarioAlvo ? ` de ${usuarioAlvo.tag}` : ''} em #${interaction.channel.name}`
+        `${deletadas} mensagem(ns) apagada(s) em #${interaction.channel.name}`
       );
     } catch (err) {
       console.error('[Limpar]', err.message);

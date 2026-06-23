@@ -1,38 +1,37 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { checkPermissao, getNomeNivel, listarNivel, NIVEIS } = require('../systems/permissoes');
 const embed = require('../utils/embed');
-
-const PERMISSOES_NECESSARIAS = [
-  { nome: 'Banir Membros', descricao: 'Necessário para o comando `/banir`' },
-  { nome: 'Expulsar Membros', descricao: 'Necessário para o comando `/expulsar`' },
-  { nome: 'Gerenciar Mensagens', descricao: 'Necessário para o comando `/limpar`' },
-  { nome: 'Gerenciar Canais', descricao: 'Necessário para criar e deletar canais de tickets' },
-  { nome: 'Moderar Membros', descricao: 'Necessário para `/tempo` e `/advertir`' },
-  { nome: 'Ver Canais', descricao: 'Necessário para visualizar canais do servidor' },
-  { nome: 'Enviar Mensagens', descricao: 'Necessário para enviar mensagens e embeds' },
-  { nome: 'Ler Histórico de Mensagens', descricao: 'Necessário para `/limpar` e transcritos' },
-  { nome: 'Incorporar Links', descricao: 'Necessário para enviar embeds' },
-  { nome: 'Anexar Arquivos', descricao: 'Necessário para enviar transcritos de tickets' },
-  { nome: 'Usar Comandos de Aplicação', descricao: 'Necessário para os comandos de barra (/)' },
-];
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('permissoes')
-    .setDescription('Exibe todas as permissões necessárias do bot.')
+    .setDescription('Exibe as permissões do bot e os usuários em cada nível.')
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
-    const campos = PERMISSOES_NECESSARIAS.map(p => ({
-      name: `✅ ${p.nome}`,
-      value: p.descricao,
-      inline: false,
-    }));
+    if (!checkPermissao(interaction, NIVEIS.suporte)) {
+      return interaction.reply({ embeds: [embed.erro('Sem Permissão', 'Você não tem permissão para usar este comando.')], ephemeral: true });
+    }
+
+    const donos = listarNivel('dono');
+    const admins = listarNivel('admin');
+    const mods = listarNivel('moderador');
+    const suporte = listarNivel('suporte');
+
+    const fmt = (lista) => lista.length > 0 ? lista.map(id => `<@${id}>`).join(', ') : '*Nenhum*';
+    const nivel = getNomeNivel(interaction.user.id, interaction.guild?.ownerId);
 
     return interaction.reply({
       embeds: [embed.info(
-        '🔐 Permissões Necessárias',
-        'Abaixo estão todas as permissões que o bot precisa para funcionar corretamente.\nUse `/verificarpermissoes` para checar quais estão faltando.',
-        campos
+        '🔐 Sistema de Permissões',
+        `Seu nível atual: **${nivel}**\n\nAbaixo estão os usuários registrados em cada nível do bot:`,
+        [
+          { name: '👑 Donos', value: fmt(donos), inline: false },
+          { name: '🛡️ Administradores', value: fmt(admins), inline: false },
+          { name: '🔨 Moderadores', value: fmt(mods), inline: false },
+          { name: '🎫 Suporte', value: fmt(suporte), inline: false },
+          { name: '📌 Nota', value: 'O **dono do servidor** tem acesso total automaticamente, mesmo que não esteja listado.', inline: false },
+        ]
       )],
       ephemeral: true,
     });

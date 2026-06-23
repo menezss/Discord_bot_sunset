@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { isModerador } = require('../systems/permissoes');
+const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
 
@@ -21,9 +21,7 @@ module.exports = {
     .setDescription('Aplica silenciamento temporário a um usuário.')
     .addUserOption(opt => opt.setName('usuario').setDescription('O usuário a silenciar').setRequired(true))
     .addStringOption(opt =>
-      opt.setName('duracao')
-        .setDescription('Duração do silenciamento')
-        .setRequired(true)
+      opt.setName('duracao').setDescription('Duração do silenciamento').setRequired(true)
         .addChoices(
           { name: '60 Segundos', value: '60s' },
           { name: '5 Minutos', value: '5m' },
@@ -40,14 +38,14 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
   async execute(interaction) {
-    if (!isModerador(interaction.user.id)) {
+    if (!checkPermissao(interaction, NIVEIS.moderador)) {
       return interaction.reply({ embeds: [embed.erro('Sem Permissão', 'Você não tem permissão para usar este comando.')], ephemeral: true });
     }
 
     const alvo = interaction.options.getUser('usuario');
     const duracaoChave = interaction.options.getString('duracao');
     const motivo = interaction.options.getString('motivo') || 'Nenhum motivo informado';
-    const { ms: duracaoMs, label: duracaoLabel } = DURACOES[duracaoChave];
+    const { ms, label } = DURACOES[duracaoChave];
 
     if (alvo.id === interaction.user.id) {
       return interaction.reply({ embeds: [embed.erro('Alvo Inválido', 'Você não pode silenciar a si mesmo.')], ephemeral: true });
@@ -55,26 +53,17 @@ module.exports = {
 
     try {
       const membro = await interaction.guild.members.fetch(alvo.id).catch(() => null);
-      if (!membro) {
-        return interaction.reply({ embeds: [embed.erro('Não Encontrado', 'Este usuário não está no servidor.')], ephemeral: true });
-      }
-      if (!membro.moderatable) {
-        return interaction.reply({ embeds: [embed.erro('Não é Possível Silenciar', 'Não consigo silenciar este usuário.')], ephemeral: true });
-      }
+      if (!membro) return interaction.reply({ embeds: [embed.erro('Não Encontrado', 'Este usuário não está no servidor.')], ephemeral: true });
+      if (!membro.moderatable) return interaction.reply({ embeds: [embed.erro('Não é Possível', 'Não consigo silenciar este usuário.')], ephemeral: true });
 
-      await membro.timeout(duracaoMs, motivo);
+      await membro.timeout(ms, motivo);
 
       try {
-        await alvo.send({
-          embeds: [embed.aviso('Você foi silenciado', `Você foi silenciado em **${interaction.guild.name}** por **${duracaoLabel}**.\n**Motivo:** ${motivo}`)],
-        });
+        await alvo.send({ embeds: [embed.aviso('Você foi silenciado', `Silenciado em **${interaction.guild.name}** por **${label}**.\n**Motivo:** ${motivo}`)] });
       } catch {}
 
-      await interaction.reply({
-        embeds: [embed.sucesso('Usuário Silenciado', `**${alvo.tag}** foi silenciado por **${duracaoLabel}**.\n**Motivo:** ${motivo}`)],
-      });
-
-      await logModeracao(interaction.client, 'Silenciamento', interaction.user, alvo, motivo, { duracao: duracaoLabel });
+      await interaction.reply({ embeds: [embed.sucesso('Usuário Silenciado', `**${alvo.tag}** silenciado por **${label}**.\n**Motivo:** ${motivo}`)] });
+      await logModeracao(interaction.client, 'Silenciamento', interaction.user, alvo, motivo, { duracao: label });
     } catch (err) {
       console.error('[Tempo]', err.message);
       return interaction.reply({ embeds: [embed.erro('Erro', 'Falha ao silenciar o usuário.')], ephemeral: true });

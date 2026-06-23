@@ -6,11 +6,11 @@ module.exports = {
   guildId: process.env.GUILD_ID,
   openaiKey: process.env.OPENAI_API_KEY,
 
-  permissions: {
-    owners: [],
-    admins: [],
-    moderators: [],
-    support: [],
+  permissoes: {
+    donos: ['1512007449291522124'],
+    administradores: [],
+    moderadores: [],
+    suporte: [],
   },
 
   embeds: {

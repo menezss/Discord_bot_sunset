@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { isModerador } = require('../systems/permissoes');
+const { checkPermissao, NIVEIS } = require('../systems/permissoes');
 const { logModeracao } = require('../utils/logger');
 const embed = require('../utils/embed');
 
@@ -12,7 +12,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
 
   async execute(interaction) {
-    if (!isModerador(interaction.user.id)) {
+    if (!checkPermissao(interaction, NIVEIS.moderador)) {
       return interaction.reply({ embeds: [embed.erro('Sem Permissão', 'Você não tem permissão para usar este comando.')], ephemeral: true });
     }
 
