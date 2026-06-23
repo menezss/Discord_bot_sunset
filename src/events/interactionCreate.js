@@ -3,6 +3,7 @@ const {
   createTicket,
   closeTicket,
   confirmCloseTicket,
+  saveTranscriptNow,
   toggleAI,
 } = require('../systems/tickets');
 const embed = require('../utils/embed');
@@ -39,6 +40,7 @@ module.exports = {
         return interaction.update({ content: '❌ Close cancelled.', components: [], embeds: [] });
       }
       if (customId === 'ticket_toggle_ai') return toggleAI(interaction);
+      if (customId === 'ticket_transcript') return saveTranscriptNow(interaction);
     }
   },
 };

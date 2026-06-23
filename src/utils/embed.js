@@ -24,8 +24,10 @@ function error(title, description) {
   return base(config.embeds.errorColor).setTitle(`❌ ${title}`).setDescription(description);
 }
 
-function warning(title, description) {
-  return base(config.embeds.warningColor).setTitle(`⚠️ ${title}`).setDescription(description);
+function warning(title, description, fields = []) {
+  const e = base(config.embeds.warningColor).setTitle(`⚠️ ${title}`).setDescription(description);
+  if (fields.length > 0) e.addFields(fields);
+  return e;
 }
 
 function info(title, description, fields = []) {

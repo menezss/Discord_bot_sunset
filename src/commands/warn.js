@@ -1,9 +1,8 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { isModerator } = require('../systems/permissions');
+const { addWarning } = require('../systems/warnings');
 const { logModeration } = require('../utils/logger');
 const embed = require('../utils/embed');
-
-const warnings = new Map();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -29,21 +28,21 @@ module.exports = {
       return interaction.reply({ embeds: [embed.error('Invalid Target', 'You cannot warn a bot.')], ephemeral: true });
     }
 
-    const key = `${interaction.guild.id}-${target.id}`;
-    if (!warnings.has(key)) warnings.set(key, []);
-    const userWarnings = warnings.get(key);
-    userWarnings.push({ reason, moderator: interaction.user.tag, timestamp: new Date() });
+    const list = addWarning(interaction.guild.id, target.id, {
+      reason,
+      moderator: interaction.user.tag,
+    });
 
     try {
       await target.send({
-        embeds: [embed.warning('You have been warned', `You received a warning in **${interaction.guild.name}**.\n**Reason:** ${reason}\n**Total Warnings:** ${userWarnings.length}`)],
+        embeds: [embed.warning('You have been warned', `You received a warning in **${interaction.guild.name}**.\n**Reason:** ${reason}\n**Total Warnings:** ${list.length}`)],
       });
     } catch {}
 
     await interaction.reply({
-      embeds: [embed.warning('User Warned', `**${target.tag}** has been warned.\n**Reason:** ${reason}\n**Total Warnings:** ${userWarnings.length}`)],
+      embeds: [embed.warning('User Warned', `**${target.tag}** has been warned.\n**Reason:** ${reason}\n**Total Warnings:** ${list.length}`)],
     });
 
-    await logModeration(interaction.client, 'Warn', interaction.user, target, reason, { duration: `Warning #${userWarnings.length}` });
+    await logModeration(interaction.client, 'Warn', interaction.user, target, reason, { duration: `Warning #${list.length}` });
   },
 };
