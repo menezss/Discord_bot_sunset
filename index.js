@@ -49,7 +49,15 @@ if (!config.token) {
 }
 
 client.login(config.token).catch(err => {
-  console.error('[Bot] Failed to login:', err.message);
+  if (err.message.includes('disallowed intents')) {
+    console.error('[Bot] ERROR: Privileged intents are not enabled!');
+    console.error('[Bot] Go to: https://discord.com/developers/applications');
+    console.error('[Bot] Select your app → Bot → Privileged Gateway Intents');
+    console.error('[Bot] Enable: "Server Members Intent" AND "Message Content Intent"');
+    console.error('[Bot] Then restart this bot.');
+  } else {
+    console.error('[Bot] Failed to login:', err.message);
+  }
   process.exit(1);
 });
 
