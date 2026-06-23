@@ -1,0 +1,15 @@
+{
+  "titulo": "teste",
+  "descricao": "abalalalla",
+  "cor": "#5865F2",
+  "rodape": "TESTE",
+  "banner": null,
+  "thumbnail": null,
+  "texto_botao": "Abrir Ticket",
+  "emoji_botao": "🎫",
+  "mensagem_abertura": "Olá, {usuario}! Um membro da equipe irá te atender em breve.\n\nDescreva seu problema com o máximo de detalhes possível.",
+  "mensagem_fechamento": "Este ticket está sendo fechado. O transcrito será salvo automaticamente.",
+  "categoria_ticket": null,
+  "canal_logs": null,
+  "canal_transcripts": null
+}
