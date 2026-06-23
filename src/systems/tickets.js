@@ -8,6 +8,7 @@ const {
   AttachmentBuilder,
 } = require('discord.js');
 const config = require('../../config');
+const { getConfig } = require('./ticketConfig');
 const { buildEmbed, logTicket } = require('../utils/logger');
 const { clearHistory } = require('./ai');
 
@@ -80,14 +81,15 @@ async function gerarTranscrito(canal, ticket) {
 }
 
 async function enviarTranscrito(client, canal, ticket, fechadoPor) {
-  const canalTranscritoId = config.tickets.transcriptChannelId || config.logs.ticketChannelId || config.logs.channelId;
+  const cfg = getConfig();
+  const canalTranscritoId = cfg.canal_transcripts || cfg.canal_logs || config.tickets?.transcriptChannelId || config.logs?.channelId;
   const buf = await gerarTranscrito(canal, ticket);
   if (!buf) return;
 
   const anexo = new AttachmentBuilder(buf, { name: `transcrito-${canal.name}.txt` });
 
   const embedTranscrito = new EmbedBuilder()
-    .setColor(config.embeds.color)
+    .setColor(cfg.cor || config.embeds.color)
     .setTitle('📄 Transcrito do Ticket')
     .setDescription(`Transcrito de **${canal.name}**`)
     .addFields(
@@ -97,7 +99,7 @@ async function enviarTranscrito(client, canal, ticket, fechadoPor) {
       { name: 'Fechado em', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
     )
     .setTimestamp()
-    .setFooter({ text: config.embeds.footer.text });
+    .setFooter({ text: cfg.rodape || config.embeds.footer.text });
 
   if (canalTranscritoId) {
     try {
@@ -117,7 +119,7 @@ async function enviarTranscrito(client, canal, ticket, fechadoPor) {
       if (bufDm) {
         const anexoDm = new AttachmentBuilder(bufDm, { name: `transcrito-${canal.name}.txt` });
         await donoDaTicket.send({
-          embeds: [buildEmbed('📄 Transcrito do Seu Ticket', `Seu ticket **${canal.name}** foi fechado. O transcrito está em anexo.`, config.embeds.color)],
+          embeds: [buildEmbed('📄 Transcrito do Seu Ticket', `Seu ticket **${canal.name}** foi fechado. O transcrito está em anexo.`, cfg.cor || config.embeds.color)],
           files: [anexoDm],
         });
       }
@@ -127,6 +129,7 @@ async function enviarTranscrito(client, canal, ticket, fechadoPor) {
 
 async function criarTicket(interaction) {
   const { guild, user } = interaction;
+  const cfg = getConfig();
 
   const existente = getTicketPorUsuario(user.id);
   if (existente) {
@@ -136,7 +139,7 @@ async function criarTicket(interaction) {
     });
   }
 
-  const categoryId = config.tickets.categoryId;
+  const categoryId = cfg.categoria_ticket || config.tickets?.categoryId;
   const nomeCanal = `ticket-${user.username.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now().toString().slice(-4)}`;
 
   const permissoes = [
@@ -151,7 +154,7 @@ async function criarTicket(interaction) {
     },
   ];
 
-  if (config.tickets.supportRoleId) {
+  if (config.tickets?.supportRoleId) {
     permissoes.push({
       id: config.tickets.supportRoleId,
       allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
@@ -208,22 +211,26 @@ async function criarTicket(interaction) {
       .setEmoji('📄'),
   );
 
+  // Mensagem de abertura com substituição de {usuario}
+  const mensagemAbertura = (cfg.mensagem_abertura || 'Olá, {usuario}! Um membro da equipe irá te atender em breve.\n\nDescreva seu problema com o máximo de detalhes possível.')
+    .replace(/{usuario}/g, `<@${user.id}>`);
+
   const embedBemVindo = new EmbedBuilder()
-    .setColor(config.embeds.color)
+    .setColor(cfg.cor || config.embeds.color)
     .setTitle('🎫 Ticket de Suporte')
     .addFields(
       { name: 'Usuário', value: `<@${user.id}>`, inline: true },
       { name: 'Aberto em', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
     )
     .setDescription(
-      `Olá, <@${user.id}>! Um membro da equipe irá te atender em breve.\n\n` +
-      `${config.openaiKey ? '🤖 **Suporte com IA está ativo** — você pode fazer perguntas enquanto aguarda a equipe.\n\n' : ''}` +
-      `Descreva seu problema com o máximo de detalhes possível.`
+      mensagemAbertura +
+      (config.openaiKey ? '\n\n🤖 **Suporte com IA está ativo** — você pode fazer perguntas enquanto aguarda a equipe.' : '')
     )
     .setTimestamp()
-    .setFooter({ text: config.embeds.footer.text });
+    .setFooter({ text: cfg.rodape || config.embeds.footer.text });
 
-  if (config.embeds.banner) embedBemVindo.setImage(config.embeds.banner);
+  if (cfg.banner) embedBemVindo.setImage(cfg.banner);
+  if (cfg.thumbnail) embedBemVindo.setThumbnail(cfg.thumbnail);
 
   await canalTicket.send({ content: `<@${user.id}>`, embeds: [embedBemVindo], components: [botoesControle] });
 
@@ -237,6 +244,7 @@ async function criarTicket(interaction) {
 
 async function fecharTicket(interaction) {
   const { channel } = interaction;
+  const cfg = getConfig();
   const ticket = getTicketPorCanal(channel.id);
 
   if (!ticket) {
@@ -259,8 +267,10 @@ async function fecharTicket(interaction) {
       .setEmoji('✖️'),
   );
 
+  const mensagemFechamento = cfg.mensagem_fechamento || 'Tem certeza que deseja fechar este ticket? Um transcrito será salvo automaticamente.';
+
   await interaction.reply({
-    embeds: [buildEmbed('🔒 Fechar Ticket', 'Tem certeza que deseja fechar este ticket? Um transcrito será salvo automaticamente.', config.embeds.warningColor)],
+    embeds: [buildEmbed('🔒 Fechar Ticket', mensagemFechamento, config.embeds.warningColor)],
     components: [botoesConfirmar],
     ephemeral: true,
   });
@@ -349,28 +359,25 @@ async function alternarIA(interaction) {
 }
 
 async function enviarPainelTicket(canal) {
+  const cfg = getConfig();
+
   const botao = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('ticket_criar')
-      .setLabel('Abrir Ticket')
+      .setLabel(cfg.texto_botao || 'Abrir Ticket')
       .setStyle(ButtonStyle.Primary)
-      .setEmoji('🎫'),
+      .setEmoji(cfg.emoji_botao || '🎫'),
   );
 
   const embed = new EmbedBuilder()
-    .setColor(config.embeds.color)
-    .setTitle('🎫 Suporte via Tickets')
-    .setDescription(
-      'Precisa de ajuda? Clique no botão abaixo para abrir um ticket de suporte.\nUm membro da equipe irá te atender o mais breve possível.\n\n' +
-      '**Antes de abrir um ticket:**\n' +
-      '• Descreva seu problema com clareza\n' +
-      '• Inclua capturas de tela relevantes\n' +
-      '• Seja paciente enquanto a equipe responde'
-    )
+    .setColor(cfg.cor || config.embeds.color)
+    .setTitle(cfg.titulo || '🎫 Suporte via Tickets')
+    .setDescription(cfg.descricao || 'Clique no botão abaixo para abrir um ticket de suporte.')
     .setTimestamp()
-    .setFooter({ text: config.embeds.footer.text });
+    .setFooter({ text: cfg.rodape || config.embeds.footer.text });
 
-  if (config.embeds.banner) embed.setImage(config.embeds.banner);
+  if (cfg.banner) embed.setImage(cfg.banner);
+  if (cfg.thumbnail) embed.setThumbnail(cfg.thumbnail);
 
   await canal.send({ embeds: [embed], components: [botao] });
 }
